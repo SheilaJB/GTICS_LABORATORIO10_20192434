@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <title>El Juego del Laberinto </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}"/>
+        <style>
+            #tablero {
+                display: grid;
+                gap: 2px;
+                justify-content: center;
+            }
+
+            .cell {
+                width: 40px;
+                height: 40px;
+                border: 1px solid #ccc;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        </style>
+
+</head>
+<body>
+
+<div class="main">
+    <div class="container px-4 py-5">
+        <div class="text-center">
+            <h1>El Juego del Laberinto</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Boton para crear un laberinto -->
+        <div class="text-center">
+            <button id="btnSubirLaberinto" class="btn btn-outline-primary mt-2"> Subir laberinto </button>
+        </div>
+
+
+        <!-- Activar Textarea -->
+        <textarea id="mapaEntrada" class="form-control mt-5 mb-5"  placeholder="Ingrese el mapa del juego aquí"></textarea>
+
+        <!-- Boton para iniciar -->
+        <div class="text-center">
+            <button id="iniciar" class="btn btn-outline-primary mt-2"> Iniciar el juego </button>
+        </div>
+
+
+        <div id="tableroContainer" style="display: none;">
+            <div id="tablero" style="display: flex; flex-direction: column;"></div>
+            <button id="mostrarObstaculos" class="btn btn-success mt-2">Mostrar obstáculos</button>
+        </div>
+
+
+        <script>
+            $(document).ready(function (){
+                console.log("jquery listo para usarse!")
+                let styles = {};
+                let ostaculosVisiables = false;
+
+                // Ocultar el textarea al inicio
+                $("#mapaEntrada").hide();
+                $("#iniciar").hide();
+
+                // Mostrar el textarea al hacer clic en el botón
+                $("#btnSubirLaberinto").click(function () {
+                    $("#mapaEntrada").fadeIn();
+                });
+
+                $("#mapaEntrada").on('input', function () {
+                    if ($(this).val().trim() !== "") {
+                        $("#iniciar").fadeIn();
+                    } else {
+                        $("#iniciar").hide();
+                    }
+                    console.log("Si se oculta la entrada :D")
+                });
+
+
+                // Creación del tablero
+                $("#iniciar").click(function () {
+
+                    const input = $("#mapaEntrada").val();
+                    console.log("Contenido del textarea:", input);
+                    const [mapData, legendData] = input.split("\n\n");
+                    console.log("Mapa:", mapData);
+                    console.log("Leyenda:", legendData);
+
+                    styles = processLegend(legendData.trim().split("\n"));
+                    generateBoard(mapData.trim().split("\n"));
+                    // Mostrar el contenedor del tablero
+                    $("#tableroContainer").fadeIn();
+                });
+
+                // Mostrar / Ocultar obstáculos
+                $("#mostrarObstaculos").click(function () {
+                    ostaculosVisiables = !ostaculosVisiables;
+
+                    $("#tablero div").each(function () {
+                        const type = $(this).data("type");
+                        if (type === "S" || type === "C" || type === "P") {
+                            $(this).css("visibility", ostaculosVisiables ? "visible" : "hidden");
+                        }
+                    });
+                    $(this).text(ostaculosVisiables ? "Ocultar obstáculos" : "Mostrar obstáculos");
+                });
+
+                // Mostrar imagenes
+                function processLegend(legend) {
+                    const styles = {};
+                    legend.forEach(line => {
+                        const [key, value] = line.split(":");
+                        if (value.includes(".png")) {
+                            styles[key] = {
+                                type: "image",
+                                content: `/static/${value.split(" ")[0]}`
+                            };
+
+                        } else {
+                            styles[key] = {
+                                type: "color",
+                                content: value
+                            }
+                        }
+                    });
+                    return styles;
+                }
+
+                // Función para generar el tablero
+                function generateBoard(map) {
+                    const $tablero = $("#tablero");
+                    $tablero.empty();
+
+                    map.forEach((row, y) => {
+                        const $rowDiv = $("<div>").css("display", "flex");
+                        row.split("").forEach((cell, x) => {
+                            const cellStyle = styles[cell] || { type: "color", content: "#ffffff" };
+                            const $cellDiv = $("<div>")
+                                .addClass("cell")
+                                .css(cellStyle.type === "color" ? { backgroundColor: cellStyle.content } : {})
+                                .attr("data-x", x)
+                                .attr("data-y", y)
+                                .attr("data-type", cell);
+
+                            if (cellStyle.type === "image") {
+                                $cellDiv.html(`<img src="${cellStyle.content}" alt="${cell}">`);
+                            }
+
+                            $rowDiv.append($cellDiv);
+                        });
+                        $tablero.append($rowDiv);
+                    });
+                }
+            });
+        </script>
+
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
